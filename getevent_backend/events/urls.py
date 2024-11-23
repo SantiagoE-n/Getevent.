@@ -1,4 +1,8 @@
 from django.urls import path
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 from . import views
 
 urlpatterns = [
@@ -22,4 +26,8 @@ urlpatterns = [
     path('organizers/create/', views.organizer_create, name='organizer_create'),  # POST: Crear organizador
     path('organizers/<int:id>/edit/', views.organizer_edit, name='organizer_edit'),  # PUT: Editar organizador
     path('organizers/<int:id>/delete/', views.organizer_delete, name='organizer_delete'),  # DELETE: Eliminar organizador
+
+    # Endpoints para Tokens JWT
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Obtener token de acceso y refresco
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Refrescar token
 ]
