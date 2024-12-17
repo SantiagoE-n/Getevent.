@@ -1,139 +1,155 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import Modal from 'react-modal';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import './App.css';
+
+Modal.setAppElement('#root'); // Requerido por react-modal
 
 function App() {
   const [events, setEvents] = useState([]);
-  const [newEvent, setNewEvent] = useState({ name: '', location: '' });
+  const [newEvent, setNewEvent] = useState({ name: '', location: '', date: new Date() });
   const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const [token, setToken] = useState(localStorage.getItem('access_token') || ''); // Cargar token si existe
+  const [token, setToken] = useState(localStorage.getItem('access_token') || '');
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [loginError, setLoginError] = useState(''); // Estado para errores de login
 
-  // Función para obtener eventos desde la API
+  // Función para obtener eventos
   const fetchEvents = useCallback(() => {
     axios.get('http://localhost:8000/events/', {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then(response => {
-        setEvents(response.data.events);
-      })
+      .then(response => setEvents(response.data.events))
       .catch(error => {
         console.error("Error fetching events:", error);
-        if (error.response && error.response.status === 401) {
-          alert("Session expired! Please log in again.");
-          handleLogout();
-        }
+        if (error.response?.status === 401) handleLogout();
       });
-  }, [token]); // Token es la dependencia necesaria
+  }, [token]);
 
-  // Al cargar el componente, cargar eventos si el token está presente
-  useEffect(() => {
-    if (token) fetchEvents();
-  }, [token, fetchEvents]);
+  // Cargar eventos si el token existe
+  useEffect(() => { if (token) fetchEvents(); }, [token, fetchEvents]);
 
-  // Manejar cambios en el formulario de creación de eventos
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewEvent(prevState => ({ ...prevState, [name]: value }));
-  };
+  const handleInputChange = (e) => setNewEvent({ ...newEvent, [e.target.name]: e.target.value });
 
-  // Manejar cambios en el formulario de inicio de sesión
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials({ ...credentials, [name]: value });
-  };
+  const handleDateChange = (date) => setNewEvent({ ...newEvent, date });
 
-  // Enviar las credenciales al backend para obtener el token
+  const handleLoginChange = (e) => setCredentials({ ...credentials, [e.target.name]: e.target.value });
+
   const handleLoginSubmit = (e) => {
     e.preventDefault();
+    setLoginError(''); // Limpiar errores previos
     axios.post('http://localhost:8000/token/', credentials)
       .then(response => {
         setToken(response.data.access);
-        localStorage.setItem('access_token', response.data.access); // Guardar token en localStorage
-        alert("Login Successful! Token has been set.");
+        localStorage.setItem('access_token', response.data.access);
+        setLoginError(''); // Limpiar errores
+        alert("Login Successful!");
       })
-      .catch(error => {
-        console.error("Login failed:", error);
-        alert("Login failed! Check your credentials.");
+      .catch((error) => {
+        console.error("Login error:", error);
+        setLoginError("Invalid username or password. Please try again.");
       });
   };
 
-  // Manejar el envío del formulario para crear un nuevo evento
   const handleEventSubmit = (e) => {
     e.preventDefault();
     axios.post('http://localhost:8000/events/create/', newEvent, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then(response => {
-        setEvents([...events, response.data.event]);
-        setNewEvent({ name: '', location: '' });
+      .then(() => {
+        fetchEvents();
+        setModalIsOpen(false);
+        setNewEvent({ name: '', location: '', date: new Date() });
       })
-      .catch(error => {
-        console.error("Error creating event:", error);
-        alert("Error creating event! Make sure you're logged in.");
-      });
+      .catch(() => alert("Error creating event."));
   };
 
-  // Manejar Logout
   const handleLogout = () => {
     setToken('');
     localStorage.removeItem('access_token');
     setEvents([]);
-    alert("You have been logged out.");
   };
 
   return (
-    <div>
-      <h1>Event List</h1>
-      {!token ? (
-        <div>
-          <h2>Login</h2>
-          <form onSubmit={handleLoginSubmit}>
-            <input
-              type="text"
-              name="username"
-              placeholder="Username"
-              value={credentials.username}
-              onChange={handleLoginChange}
-            />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={credentials.password}
-              onChange={handleLoginChange}
-            />
-            <button type="submit">Login</button>
-          </form>
-        </div>
-      ) : (
-        <div>
-          <button onClick={handleLogout} style={{ marginBottom: '20px' }}>Logout</button>
-          
-          <ul>
-            {events.map(event => (
-              <li key={event.id}>{event.name} - {event.location}</li>
-            ))}
-          </ul>
+    <div className="app-container">
+      {/* Header */}
+      <header className="app-header">
+        <h1>Event List</h1>
+        {token && (
+          <button className="logout-btn" onClick={handleLogout}>
+            <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+          </button>
+        )}
+      </header>
 
-          <h2>Create Event</h2>
-          <form onSubmit={handleEventSubmit}>
-            <input
-              type="text"
-              name="name"
-              placeholder="Event Name"
-              value={newEvent.name}
-              onChange={handleInputChange}
-            />
-            <input
-              type="text"
-              name="location"
-              placeholder="Event Location"
-              value={newEvent.location}
-              onChange={handleInputChange}
-            />
-            <button type="submit">Create Event</button>
-          </form>
-        </div>
-      )}
+      {/* Main Content */}
+      <main className="app-main">
+        {!token ? (
+          <div className="login-form">
+            <h2>Login</h2>
+            <form onSubmit={handleLoginSubmit}>
+              <input
+                type="text"
+                name="username"
+                placeholder="Username"
+                onChange={handleLoginChange}
+                value={credentials.username}
+                required
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                onChange={handleLoginChange}
+                value={credentials.password}
+                required
+              />
+              <button type="submit">Login</button>
+            </form>
+            {/* Mostrar error de login */}
+            {loginError && <p className="error-message" style={{ color: "red" }}>{loginError}</p>}
+          </div>
+        ) : (
+          <div>
+            <button className="add-btn" onClick={() => setModalIsOpen(true)}>
+              <FontAwesomeIcon icon={faPlus} /> Add Event
+            </button>
+
+            {/* Event List */}
+            <ul className="event-list">
+              {events.map(event => (
+                <li key={event.id}>
+                  <span>{event.name}</span> - <span>{event.location}</span> - <span>{new Date(event.date).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Modal for Creating Events */}
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={() => setModalIsOpen(false)}
+              className="modal"
+              overlayClassName="modal-overlay"
+            >
+              <h2>Create Event</h2>
+              <form onSubmit={handleEventSubmit}>
+                <input type="text" name="name" placeholder="Event Name" onChange={handleInputChange} required />
+                <input type="text" name="location" placeholder="Location" onChange={handleInputChange} required />
+                <DatePicker selected={newEvent.date} onChange={handleDateChange} />
+                <button type="submit">Create</button>
+              </form>
+            </Modal>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        <p>&copy; 2024 GetEvent. All rights reserved.</p>
+      </footer>
     </div>
   );
 }

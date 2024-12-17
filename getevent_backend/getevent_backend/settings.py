@@ -134,6 +134,8 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",  # URL del frontend React
     "http://127.0.0.1:8080",
+    "http://localhost:8081",  # Agregar puerto del frontend que estás usando
+    "http://127.0.0.1:8081",
 ]
 CORS_ALLOW_CREDENTIALS = True  # Permite enviar cookies y credenciales
 CORS_ALLOW_HEADERS = [
@@ -145,4 +147,4 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 CORS_EXPOSE_HEADERS = ['Content-Disposition']  # Permite exponer ciertos headers
-CORS_ORIGIN_WHITELIST = CORS_ALLOWED_ORIGINS
+CORS_ORIGIN_WHITELIST = CORS_ALLOWED_ORIGINS  # Igualamos la whitelist a los orígenes permitidos

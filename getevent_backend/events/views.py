@@ -7,7 +7,7 @@ import json
 
 # Eventos
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def event_list(request):
     events = Event.objects.all()
     event_data = []
@@ -25,7 +25,7 @@ def event_list(request):
     return JsonResponse({'events': event_data})
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def event_detail(request, id):
     try:
         event = Event.objects.get(pk=id)
@@ -34,7 +34,7 @@ def event_detail(request, id):
         return JsonResponse({'error': 'Event not found'}, status=404)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def event_create(request):
     try:
         data = json.loads(request.body)
@@ -52,8 +52,21 @@ def event_create(request):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def register_to_event(request, id):
+    try:
+        event = Event.objects.get(pk=id)
+        user = request.user
+        ticket, created = Ticket.objects.get_or_create(event=event, user=user)
+        if not created:
+            return JsonResponse({'message': 'You are already registered for this event.'}, status=400)
+        return JsonResponse({'message': f'Registered successfully to {event.name}'}, status=201)
+    except Event.DoesNotExist:
+        return JsonResponse({'error': 'Event not found'}, status=404)
+
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def event_edit(request, id):
     try:
         event = Event.objects.get(pk=id)
@@ -70,7 +83,7 @@ def event_edit(request, id):
         return JsonResponse({'error': 'Event not found'}, status=404)
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def event_delete(request, id):
     try:
         event = Event.objects.get(pk=id)
@@ -81,14 +94,14 @@ def event_delete(request, id):
 
 # Tickets
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def ticket_list(request, event_id):
     tickets = Ticket.objects.filter(event_id=event_id)
     ticket_data = [{'id': ticket.id, 'user': ticket.user.id, 'price': ticket.price} for ticket in tickets]
     return JsonResponse({'tickets': ticket_data})
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def ticket_detail(request, event_id, ticket_id):
     try:
         ticket = Ticket.objects.get(event_id=event_id, pk=ticket_id)
@@ -97,7 +110,7 @@ def ticket_detail(request, event_id, ticket_id):
         return JsonResponse({'error': 'Ticket not found'}, status=404)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def ticket_create(request, event_id):
     try:
         data = json.loads(request.body)
@@ -113,7 +126,7 @@ def ticket_create(request, event_id):
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def ticket_edit(request, event_id, ticket_id):
     try:
         ticket = Ticket.objects.get(event_id=event_id, pk=ticket_id)
@@ -124,9 +137,11 @@ def ticket_edit(request, event_id, ticket_id):
         return JsonResponse({'ticket': model_to_dict(ticket)})
     except Ticket.DoesNotExist:
         return JsonResponse({'error': 'Ticket not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def ticket_delete(request, event_id, ticket_id):
     try:
         ticket = Ticket.objects.get(event_id=event_id, pk=ticket_id)
@@ -137,14 +152,14 @@ def ticket_delete(request, event_id, ticket_id):
 
 # Organizadores
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def organizer_list(request):
     organizers = Organizer.objects.all()
     organizer_data = [{'id': organizer.id, 'name': organizer.name, 'contact_info': organizer.contact_info} for organizer in organizers]
     return JsonResponse({'organizers': organizer_data})
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def organizer_detail(request, id):
     try:
         organizer = Organizer.objects.get(pk=id)
@@ -153,7 +168,7 @@ def organizer_detail(request, id):
         return JsonResponse({'error': 'Organizer not found'}, status=404)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def organizer_create(request):
     try:
         data = json.loads(request.body)
@@ -171,7 +186,7 @@ def organizer_create(request):
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def organizer_edit(request, id):
     try:
         organizer = Organizer.objects.get(pk=id)
@@ -185,9 +200,11 @@ def organizer_edit(request, id):
         return JsonResponse({'organizer': model_to_dict(organizer)})
     except Organizer.DoesNotExist:
         return JsonResponse({'error': 'Organizer not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])  # Requiere autenticación
+@permission_classes([IsAuthenticated])
 def organizer_delete(request, id):
     try:
         organizer = Organizer.objects.get(pk=id)
