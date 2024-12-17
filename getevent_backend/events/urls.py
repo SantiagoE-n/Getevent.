@@ -16,7 +16,7 @@ urlpatterns = [
     # Tickets
     path('events/<int:event_id>/tickets/', views.ticket_list, name='ticket_list'),  # GET: Lista de tickets por evento
     path('events/<int:event_id>/tickets/<int:ticket_id>/', views.ticket_detail, name='ticket_detail'),  # GET: Ticket específico
-    path('events/<int:event_id>/tickets/create/', views.ticket_create, name='ticket_create'),  # POST: Crear ticket
+    path('events/<int:event_id>/tickets/create/', views.ticket_create, name='ticket_create'),  # POST: Crear tickets
     path('events/<int:event_id>/tickets/<int:ticket_id>/edit/', views.ticket_edit, name='ticket_edit'),  # PUT: Editar ticket
     path('events/<int:event_id>/tickets/<int:ticket_id>/delete/', views.ticket_delete, name='ticket_delete'),  # DELETE: Eliminar ticket
 
@@ -30,4 +30,7 @@ urlpatterns = [
     # Endpoints para Tokens JWT
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Obtener token de acceso y refresco
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # Refrescar token
+
+    # Ruta de prueba (opcional) para verificar si el servidor está funcionando
+    path('health/', lambda request: JsonResponse({"status": "OK"}), name='health_check'),
 ]

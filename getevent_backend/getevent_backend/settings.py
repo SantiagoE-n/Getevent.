@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-re(cketc%_zjtn1r%0y&@^wnp#q^vj7az65m!g)co(a0w)47lp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Permite cualquier host en desarrollo
 
 # Application definition
 INSTALLED_APPS = [
@@ -38,15 +38,17 @@ INSTALLED_APPS = [
     'events',  # Our events app
     'rest_framework',  # Django REST framework
     'rest_framework_simplejwt',  # JWT authentication
+    'corsheaders',  # Cors headers for cross-origin requests
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Cors middleware for handling CORS
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',  # Middleware necesario para admin
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -114,6 +116,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',  # Todas las vistas requieren autenticación
+    ),
 }
 
 # Simple JWT settings
@@ -121,4 +126,23 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Token válido por 60 minutos
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Token de refresco válido por 1 día
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",  # URL del frontend React
+    "http://127.0.0.1:8080",
+]
+CORS_ALLOW_CREDENTIALS = True  # Permite enviar cookies y credenciales
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'authorization',
+    'content-type',
+    'origin',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_EXPOSE_HEADERS = ['Content-Disposition']  # Permite exponer ciertos headers
+CORS_ORIGIN_WHITELIST = CORS_ALLOWED_ORIGINS
