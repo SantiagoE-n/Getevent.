@@ -1,5 +1,19 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
+# Model for User with role field
+class User(AbstractUser):
+    ROLE_CHOICES = [
+        ('user', 'User'),
+        ('organizer', 'Organizer'),
+    ]
+    email = models.EmailField(unique=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')  # Nuevo campo para definir el rol
+
+    def __str__(self):
+        return f"{self.username} ({self.role})"
+
+# Model for Organizer
 class Organizer(models.Model):
     name = models.CharField(max_length=255)
     contact_info = models.TextField()  # Puede incluir email, teléfono, etc.
@@ -10,6 +24,7 @@ class Organizer(models.Model):
     def __str__(self):
         return self.name
 
+# Model for Event
 class Event(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -17,21 +32,12 @@ class Event(models.Model):
     date = models.DateTimeField()
     is_private = models.BooleanField(default=False)
     password = models.CharField(max_length=5, blank=True, null=True)
-    organizer = models.ForeignKey(Organizer, on_delete=models.SET_NULL, null=True, related_name='events')  # Relación con Organizer
+    organizer = models.ForeignKey(Organizer, on_delete=models.SET_NULL, null=True, related_name='events')
 
     def __str__(self):
         return self.name
 
-class User(models.Model):
-    username = models.CharField(max_length=100, unique=True)
-    email = models.EmailField(unique=True)
-    password = models.CharField(max_length=128)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.username
-
+# Model for Venue
 class Venue(models.Model):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
@@ -42,6 +48,7 @@ class Venue(models.Model):
     def __str__(self):
         return self.name
 
+# Model for Ticket
 class Ticket(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')

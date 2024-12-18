@@ -149,4 +149,5 @@ CORS_ALLOW_HEADERS = [
 CORS_EXPOSE_HEADERS = ['Content-Disposition']  # Permite exponer ciertos headers
 CORS_ORIGIN_WHITELIST = CORS_ALLOWED_ORIGINS  # Igualamos la whitelist a los orígenes permitidos
 
-
+# Custom User Model
+AUTH_USER_MODEL = 'events.User'  # Modelo de usuario personalizado

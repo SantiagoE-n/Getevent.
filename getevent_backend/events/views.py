@@ -1,8 +1,9 @@
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from .models import Event, Ticket, Organizer
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .models import Event, Ticket, Organizer, User
 from django.forms.models import model_to_dict
+from django.contrib.auth.hashers import make_password  # Para cifrar contraseñas
 import json
 
 # Eventos
@@ -29,7 +30,11 @@ def event_list(request):
 def event_detail(request, id):
     try:
         event = Event.objects.get(pk=id)
-        return JsonResponse({'event': model_to_dict(event)})
+        tickets = Ticket.objects.filter(event=event).values('id', 'user__username', 'price', 'purchase_date')
+        return JsonResponse({
+            'event': model_to_dict(event),
+            'tickets': list(tickets)
+        })
     except Event.DoesNotExist:
         return JsonResponse({'error': 'Event not found'}, status=404)
 
@@ -97,7 +102,7 @@ def event_delete(request, id):
 @permission_classes([IsAuthenticated])
 def ticket_list(request, event_id):
     tickets = Ticket.objects.filter(event_id=event_id)
-    ticket_data = [{'id': ticket.id, 'user': ticket.user.id, 'price': ticket.price} for ticket in tickets]
+    ticket_data = [{'id': ticket.id, 'user': ticket.user.username, 'price': ticket.price} for ticket in tickets]
     return JsonResponse({'tickets': ticket_data})
 
 @api_view(['GET'])
@@ -125,31 +130,6 @@ def ticket_create(request, event_id):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def ticket_edit(request, event_id, ticket_id):
-    try:
-        ticket = Ticket.objects.get(event_id=event_id, pk=ticket_id)
-        data = json.loads(request.body)
-        ticket.price = data.get('price', ticket.price)
-        ticket.is_active = data.get('is_active', ticket.is_active)
-        ticket.save()
-        return JsonResponse({'ticket': model_to_dict(ticket)})
-    except Ticket.DoesNotExist:
-        return JsonResponse({'error': 'Ticket not found'}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def ticket_delete(request, event_id, ticket_id):
-    try:
-        ticket = Ticket.objects.get(event_id=event_id, pk=ticket_id)
-        ticket.delete()
-        return JsonResponse({'message': 'Ticket deleted successfully'}, status=204)
-    except Ticket.DoesNotExist:
-        return JsonResponse({'error': 'Ticket not found'}, status=404)
-
 # Organizadores
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -167,24 +147,6 @@ def organizer_detail(request, id):
     except Organizer.DoesNotExist:
         return JsonResponse({'error': 'Organizer not found'}, status=404)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def organizer_create(request):
-    try:
-        data = json.loads(request.body)
-        organizer = Organizer.objects.create(
-            name=data['name'],
-            contact_info=data['contact_info'],
-            address=data.get('address', ''),
-            description=data.get('description', ''),
-            website=data.get('website', None)
-        )
-        return JsonResponse({'organizer': model_to_dict(organizer)}, status=201)
-    except KeyError as e:
-        return JsonResponse({'error': f'Missing required field: {str(e)}'}, status=400)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON format'}, status=400)
-
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def organizer_edit(request, id):
@@ -193,22 +155,42 @@ def organizer_edit(request, id):
         data = json.loads(request.body)
         organizer.name = data.get('name', organizer.name)
         organizer.contact_info = data.get('contact_info', organizer.contact_info)
-        organizer.address = data.get('address', organizer.address)
-        organizer.description = data.get('description', organizer.description)
-        organizer.website = data.get('website', organizer.website)
         organizer.save()
         return JsonResponse({'organizer': model_to_dict(organizer)})
     except Organizer.DoesNotExist:
         return JsonResponse({'error': 'Organizer not found'}, status=404)
+
+# Registro de Usuarios
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def user_register(request):
+    try:
+        data = json.loads(request.body)
+        
+        # Verificar si el usuario ya existe
+        if User.objects.filter(username=data['username']).exists():
+            return JsonResponse({'error': 'Username already exists.'}, status=400)
+        
+        role = data.get('role', 'user') 
+        user = User.objects.create(
+            username=data['username'],
+            email=data['email'],
+            password=make_password(data['password']), 
+            role=role
+        )
+        return JsonResponse({'user': model_to_dict(user)}, status=201)
+    except KeyError as e:
+        return JsonResponse({'error': f'Missing required field: {str(e)}'}, status=400)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
-@api_view(['DELETE'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def organizer_delete(request, id):
-    try:
-        organizer = Organizer.objects.get(pk=id)
-        organizer.delete()
-        return JsonResponse({'message': 'Organizer deleted successfully'}, status=204)
-    except Organizer.DoesNotExist:
-        return JsonResponse({'error': 'Organizer not found'}, status=404)
+def user_profile(request):
+    user = request.user
+    return JsonResponse({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'role': user.role
+    })
