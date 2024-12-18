@@ -11,10 +11,13 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "date-fns": "^4.1.0",
+    "indexes-of": "^1.0.1",
+    "levenary": "^1.1.1",
     "react": "^18.3.1",
     "react-datepicker": "^7.5.0",
     "react-dom": "^18.3.1",
-    "react-modal": "^3.16.1",
+    "react-modal": "^3.15.1",
+    "react-router-dom": "^7.0.2",
     "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
@@ -41,5 +44,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
   }
 }
